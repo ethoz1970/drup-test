@@ -1,0 +1,5 @@
+name = NCARB Custom
+description = Edit Feild Collection Edit View
+version = 0.1
+core = 7.x
+package = ncarb_custom

@@ -1,0 +1,120 @@
+<?php
+
+
+function ncarb_custom_form_alter(&$form, $form_state, $form_id) {
+
+    if ($form_id == 'j_node_form') {
+
+        $_default = [
+            'value' => 0,
+            'notes' => ''
+        ];
+
+        $type = "q"; 
+        $nodes = node_load_multiple(array(), array('type' => $type)); 
+
+        $data = [];
+        if (!empty($form['#node']->field_answers)) {
+            $data = $form['#node']->field_answers[LANGUAGE_NONE][0]['value'];
+            $data = json_decode($data, true);
+        }
+        
+
+        //echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $data ); exit;
+        
+
+        $current = $form['field_answers'];
+        //$form['field_answers'] = ['#type' =>'hidden'];
+        //echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump(  ); exit;
+        
+        $form['ncarb'] = [
+            '#type' => 'fieldset', 
+            '#title' => t("Answers"),
+            '#collapsible' => TRUE, 
+            '#collapsed' => FALSE,
+        ];
+
+        $form['ncarb']['ncarb_post'] = [
+            '#type' =>  'hidden',
+            '#value' => 'true'
+        ];
+
+        $form['ncarb'][] = [
+            '#type' => 'item',
+            '#markup' => t('Information about the Questions/Answers'),
+        ];
+
+        foreach ($nodes as $nid => $node) {
+
+            $default = isset($data[$nid]) ? $data[$nid] : $_default;
+
+            $tid = $node->field_type[LANGUAGE_NONE][0]['tid'];
+            $term = taxonomy_term_load($tid);
+            
+            if (!isset($form['ncarb'][$term->name])) {
+                $form['ncarb'][$term->name] =  [
+                    '#type' => 'fieldset', 
+                    '#title' => t($term->name),
+                    '#collapsible' => TRUE, 
+                    '#collapsed' => FALSE,
+                ];
+            }
+
+            $form['ncarb'][$term->name]["ncarb_data_{$nid}_value"] = [
+                '#type' => 'radios',
+                '#title' => t($node->title),
+                '#default_value' => $default['value'],
+                '#options' => [0 => t('No'), 1 => t('Yes')],
+            ];
+
+             $form['ncarb'][$term->name]["ncarb_data_{$nid}_notes"] = [
+                '#type' => 'textfield',
+                '#title' => t('Notes'),
+                '#default_value' => $default['notes'],
+                '#description' => t('Additional notes if needed.'),
+            ];
+        }
+
+    }
+
+}
+
+function ncarb_custom_node_validate($node, $form, &$form_state) {
+  if (isset($node->field_answers)) {
+
+    // if (true) {
+    //   form_set_error('time', t('Stop breaking things!'));
+    // }
+  }
+}
+
+function ncarb_custom_getValues($valuesArray) {
+    $data = [];
+    foreach ($valuesArray as $key => $value) {
+        if (strpos($key, 'ncarb_data_') === 0) {
+            preg_match_all('!\d+!', $key, $matches);
+            $nid = $matches[0][0];
+            
+            if (strpos($key, '_value')) {
+                $data[$nid]['value'] = $value;
+            }
+            if (strpos($key, '_notes')) {
+                $data[$nid]['notes'] = $value;
+            }
+        }
+    }
+    return json_encode($data);
+}
+
+function ncarb_custom_node_submit($node, $form, &$form_state) {
+
+    //Comile answers into JSON format
+    if (!empty($form_state['values']['ncarb_post'])) {
+
+        $data = ncarb_custom_getValues($form_state['values']);
+        $old = $form_state['values']['field_answers'];
+
+        $node->field_answers[LANGUAGE_NONE][0]['value'] = $data;
+
+    }
+}

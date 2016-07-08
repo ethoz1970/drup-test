@@ -1,0 +1,8 @@
+filename = "drup.app-2016-07-08T13-17-15"
+description = ""
+datestamp = "1467998235"
+generator = "Backup and Migrate (http://drupal.org/project/backup_migrate)"
+generatorversion = "7.x-2.x"
+sites[0][version] = "7.44"
+sites[0][name] = "drup.app"
+sites[0][url] = "http://drup.app/"
